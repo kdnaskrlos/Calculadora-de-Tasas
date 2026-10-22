@@ -1,0 +1,33 @@
+name: Actualizar tasa USDT
+
+on:
+  schedule:
+    - cron: "5 * * * *"   # cada hora, al minuto 5 (hora UTC)
+  workflow_dispatch:       # permite ejecutarlo a mano desde la pestaña Actions
+
+permissions:
+  contents: write
+
+concurrency:
+  group: actualizar-tasa
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Consultar Binance P2P
+        run: python scripts/actualizar_tasa.py
+
+      - name: Guardar tasa.json
+        run: |
+          git config user.name "tasa-bot"
+          git config user.email "tasa-bot@users.noreply.github.com"
+          git add tasa.json
+          git diff --cached --quiet || (git commit -m "Actualizar tasa USDT/VES" && git push)
