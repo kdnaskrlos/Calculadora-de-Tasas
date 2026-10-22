@@ -619,7 +619,7 @@ footer {
   }
 
   document.getElementById("btn-clear").addEventListener("click", function () {
-    Object.keys(inputs).forEach(function (c) { inputs[c].value = ""; });
+    Object.keys(inputs).forEach(function (c) { inputs[c].value = fmt(0); });
     setActive(null);
     inputs.usd.focus();
   });
@@ -880,10 +880,9 @@ footer {
 
   refreshLabels();
 
-  // Estado inicial de ejemplo: 100 USD.
-  inputs.usd.value = fmt(100);
+  // Estado inicial: todos los valores en 0.
+  Object.keys(inputs).forEach(function (c) { inputs[c].value = fmt(0); });
   setActive("usd");
-  recalc("usd");
 })();
 </script>
 <script>
