@@ -3,6 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1fa463">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Calculadora">
 <script>try{var t=localStorage.getItem("super-calculadora-tema-v2");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
 <title>Súper Calculadora</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap">
@@ -273,6 +280,25 @@ footer {
 .usdt-actions { display: flex; align-items: center; gap: 14px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .link-btn.busy svg { animation: spin .8s linear infinite; }
+.install {
+  position: fixed; z-index: 20;
+  left: max(16px, env(safe-area-inset-left, 0px));
+  right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  max-width: 420px; margin: 0 auto;
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+.install img { flex: none; width: 44px; height: 44px; border-radius: 10px; }
+.install-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.install-text strong { font-size: 14px; font-weight: 800; }
+.install-text span { font-size: 12px; line-height: 1.4; color: var(--ink-2); }
+.install-actions { flex: none; display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+.install-actions .link-btn { margin: 0; text-align: center; color: var(--ink-2); }
 .credit {
   max-width: 420px; margin: 14px auto 0;
   text-align: center;
@@ -440,6 +466,14 @@ footer {
     <p class="usdt-meta" id="usdt-meta" aria-live="polite"></p>  </footer>
 </div>
 <p class="credit">Creado por KDNAS</p>
+<div class="install" id="install" role="dialog" aria-label="Instalar la calculadora" hidden>
+  <img src="icon-192.png" alt="" width="44" height="44">
+  <div class="install-text"><strong>Instala la calculadora</strong><span id="install-msg">Ábrela desde tu pantalla de inicio, como una app.</span></div>
+  <div class="install-actions">
+    <button class="btn small primary" id="install-yes" type="button">Instalar</button>
+    <button class="link-btn" id="install-no" type="button">Ahora no</button>
+  </div>
+</div>
 <script>
 (function () {
   var DEFAULTS = { cop: 3200, ves: 1020 };
@@ -627,11 +661,11 @@ footer {
   /* ---------- USDT / VES desde tasa.json ---------- */
   var CACHE_KEY = "super-calculadora-tasa-cache";
   // Si la calculadora se abre fuera de GitHub Pages (archivo descargado), lee tasa.json desde tu página publicada.
-  var PAGES_USER = "kdnaskrlos", PAGES_REPO = "Caluladora-de-Tazas";
+  var PAGES_USER = "kdnaskrlos", PAGES_REPO = "Calculadora-de-Tasas";
   var enPages = /\.github\.io$/i.test(location.hostname);
   var TASA_URL = enPages ? "tasa.json" : "https://" + PAGES_USER + ".github.io/" + PAGES_REPO + "/tasa.json";
   var REFRESH_MS = 10 * 60 * 1000;   // vuelve a leer tasa.json cada 10 minutos
-  var STALE_MS = 3 * HOUR;           // si el dato tiene más de 3 horas, se avisa
+  var STALE_MS = 1.5 * HOUR;         // si el dato tiene más de 1,5 horas, se avisa
   var q = { val: document.getElementById("q-ves-val"), chg: document.getElementById("q-ves-chg"), date: document.getElementById("q-ves-date") };
   var elMeta = document.getElementById("usdt-meta");
   var btnUse = document.getElementById("btn-usdt-use");
@@ -762,6 +796,60 @@ footer {
   inputs.usd.value = fmt(100);
   setActive("usd");
   recalc("usd");
+})();
+</script>
+<script>
+(function () {
+  var KEY = "super-calculadora-instalar";
+  var box = document.getElementById("install");
+  var yes = document.getElementById("install-yes");
+  var no = document.getElementById("install-no");
+  var msg = document.getElementById("install-msg");
+  var deferred = null;
+  var https = location.protocol === "https:";
+
+  function standalone() {
+    return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+  }
+  function visto() { try { return localStorage.getItem(KEY) === "1"; } catch (e) { return false; } }
+  function cerrar() {
+    box.hidden = true;
+    try { localStorage.setItem(KEY, "1"); } catch (e) {}
+  }
+
+  // Registra el service worker (solo funciona en https, como GitHub Pages).
+  if (https && "serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    });
+  }
+
+  if (standalone() || visto()) return;
+
+  // Chrome, Edge y Android: el navegador avisa cuando se puede instalar.
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    deferred = e;
+    box.hidden = false;
+  });
+  yes.addEventListener("click", function () {
+    if (!deferred) return;
+    deferred.prompt();
+    deferred.userChoice.then(function () { deferred = null; cerrar(); });
+  });
+  no.addEventListener("click", cerrar);
+  window.addEventListener("appinstalled", cerrar);
+
+  // iPhone y iPad (Safari): no hay aviso automático, se muestran los pasos una sola vez.
+  var ua = navigator.userAgent || "";
+  var ios = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  var safari = /safari/i.test(ua) && !/crios|fxios|edgios/i.test(ua);
+  if (https && ios && safari) {
+    msg.textContent = "Toca Compartir y luego \u00abA\u00f1adir a pantalla de inicio\u00bb.";
+    yes.hidden = true;
+    no.textContent = "Entendido";
+    setTimeout(function () { if (!visto()) box.hidden = false; }, 1500);
+  }
 })();
 </script>
 </body>
