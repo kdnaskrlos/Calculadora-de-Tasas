@@ -1,12 +1,12 @@
 {
   "pair": "USDT/VES",
   "source": "Binance P2P",
-  "rate": 1003.5,
-  "buy": 1004.0,
-  "sell": 1003.0,
-  "previous_rate": 1003.37,
-  "change_pct": 0.01,
-  "updated_at": "2026-10-22T15:48:45Z",
+  "rate": 1003.38,
+  "buy": 1003.25,
+  "sell": 1003.5,
+  "previous_rate": 1003.5,
+  "change_pct": -0.01,
+  "updated_at": "2026-10-22T16:02:48Z",
   "history": [
     {
       "t": "2026-10-22T14:06:42Z",
@@ -31,6 +31,19 @@
     {
       "t": "2026-10-22T15:48:45Z",
       "rate": 1003.5
+    },
+    {
+      "t": "2026-10-22T16:02:48Z",
+      "rate": 1003.38
     }
-  ]
+  ],
+  "bcv": {
+    "pair": "USD/VES",
+    "source": "BCV (oficial)",
+    "rate": 884.7496,
+    "previous_rate": null,
+    "change_pct": null,
+    "updated_at": "2026-10-22T04:00:00Z",
+    "checked_at": "2026-10-22T16:02:48Z"
+  }
 }
