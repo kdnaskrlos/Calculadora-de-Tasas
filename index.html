@@ -273,8 +273,6 @@ footer {
 .usdt-actions { display: flex; align-items: center; gap: 14px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .link-btn.busy svg { animation: spin .8s linear infinite; }
-.usdt-hint { margin: 0; font-size: 12px; line-height: 1.5; color: var(--ink-3); }
-.usdt-hint a { color: var(--accent-ink); font-weight: 700; }
 .credit {
   max-width: 420px; margin: 14px auto 0;
   text-align: center;
@@ -439,9 +437,7 @@ footer {
       </div>
       <p class="q-date" id="q-ves-date"></p>
     </div>
-    <p class="usdt-meta" id="usdt-meta" aria-live="polite"></p>
-    <p class="usdt-hint" id="usdt-hint" hidden>El valor se renueva cada hora. <a id="lnk-actions" href="#" target="_blank" rel="noopener">Pedir uno nuevo a Binance ahora</a>, espera uno o dos minutos y toca Actualizar.</p>
-  </footer>
+    <p class="usdt-meta" id="usdt-meta" aria-live="polite"></p>  </footer>
 </div>
 <p class="credit">Creado por KDNAS</p>
 <script>
@@ -630,6 +626,10 @@ footer {
 
   /* ---------- USDT / VES desde tasa.json ---------- */
   var CACHE_KEY = "super-calculadora-tasa-cache";
+  // Si la calculadora se abre fuera de GitHub Pages (archivo descargado), lee tasa.json desde tu página publicada.
+  var PAGES_USER = "kdnaskrlos", PAGES_REPO = "Caluladora-de-Tazas";
+  var enPages = /\.github\.io$/i.test(location.hostname);
+  var TASA_URL = enPages ? "tasa.json" : "https://" + PAGES_USER + ".github.io/" + PAGES_REPO + "/tasa.json";
   var REFRESH_MS = 10 * 60 * 1000;   // vuelve a leer tasa.json cada 10 minutos
   var STALE_MS = 3 * HOUR;           // si el dato tiene más de 3 horas, se avisa
   var q = { val: document.getElementById("q-ves-val"), chg: document.getElementById("q-ves-chg"), date: document.getElementById("q-ves-date") };
@@ -675,7 +675,7 @@ footer {
       elMeta.textContent =
         estado === "cargando" ? "Cargando el valor del USDT…" :
         estado === "vacio" ? "Todavía no hay valor. Ejecuta la acción \"Actualizar tasa USDT\" en GitHub (ver README)." :
-        "No se pudo leer tasa.json. Abre la calculadora desde tu sitio de GitHub Pages, no como archivo local.";
+        "No se pudo leer el valor del USDT. Revisa tu conexión a internet y toca Actualizar.";
       return;
     }
     q.val.textContent = fmt(tasa.ves);
@@ -703,7 +703,7 @@ footer {
   }
 
   function cargarTasa() {
-    return fetch("tasa.json?t=" + Date.now(), { cache: "no-store" })
+    return fetch(TASA_URL + "?t=" + Date.now(), { cache: "no-store" })
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
@@ -751,16 +751,6 @@ footer {
       mostrarNota(tasa.ts === antes ? "Ya tienes el dato más reciente." : "Valor actualizado.");
     });
   });
-
-  // En GitHub Pages el enlace a la acción se arma solo a partir de la dirección de la página.
-  (function () {
-    var m = location.hostname.match(/^([^.]+)\.github\.io$/i);
-    var repo = location.pathname.split("/")[1];
-    if (m && repo) {
-      document.getElementById("lnk-actions").href = "https://github.com/" + m[1] + "/" + repo + "/actions/workflows/actualizar-tasa.yml";
-      document.getElementById("usdt-hint").hidden = false;
-    }
-  })();
 
   cargarTasa();
   setInterval(cargarTasa, REFRESH_MS);
