@@ -609,6 +609,15 @@ footer {
     wraps[cur].addEventListener("click", function () { el.focus(); });
   });
 
+  // Fuerza los campos de Ajustes a mostrar las tasas actuales (quita el foco si el campo estaba activo).
+  function syncRateFields() {
+    ["cop", "ves"].forEach(function (c) {
+      if (!rIn[c]) return;
+      if (document.activeElement === rIn[c]) rIn[c].blur();
+      rIn[c].value = nfRate.format(rates[c]);
+    });
+    var e = document.getElementById("rate-err"); if (e) e.textContent = "";
+  }
   function refreshLabels() {
     document.getElementById("tag-cop").textContent = "Tasa: " + fmt(rates.cop);
     document.getElementById("tag-ves").textContent = "Tasa: " + fmt(rates.ves);
@@ -838,6 +847,7 @@ footer {
     rates = { cop: rates.cop, ves: tasa.ves };
     persistRates();
     refreshLabels();
+    syncRateFields();
     if (lastActive && inputs[lastActive].value) recalc(lastActive);
   });
 
@@ -875,6 +885,7 @@ footer {
     rates = { cop: rates.cop, ves: bcv.ves };
     persistRates();
     refreshLabels();
+    syncRateFields();
     if (lastActive && inputs[lastActive].value) recalc(lastActive);
   });
 
