@@ -23,7 +23,15 @@ jobs:
           python-version: "3.12"
 
       - name: Consultar Binance P2P
-        run: python scripts/actualizar_tasa.py
+        run: |
+          SCRIPT=$(find . -name actualizar_tasa.py -not -path "./.git/*" | head -n 1)
+          if [ -z "$SCRIPT" ]; then
+            echo "ERROR: no se encontró actualizar_tasa.py en el repositorio. Archivos presentes:"
+            find . -not -path "./.git/*" -type f | sort
+            exit 1
+          fi
+          echo "Usando $SCRIPT"
+          python "$SCRIPT"
 
       - name: Guardar tasa.json
         run: |
