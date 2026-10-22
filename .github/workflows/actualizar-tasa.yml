@@ -43,4 +43,17 @@ jobs:
           git config user.name "tasa-bot"
           git config user.email "tasa-bot@users.noreply.github.com"
           git add tasa.json
-          git diff --cached --quiet || (git commit -m "Actualizar tasa USDT/VES" && git push)
+          if git diff --cached --quiet; then
+            echo "tasa.json sin cambios; no hay nada que guardar."
+            exit 0
+          fi
+          git commit -m "Actualizar tasa USDT/VES"
+          # Si el repositorio recibió otros cambios mientras corría, se integran y se reintenta.
+          for intento in 1 2 3; do
+            git pull --rebase -X theirs origin main && git push origin HEAD:main && exit 0
+            echo "Intento $intento falló; reintentando..."
+            git rebase --abort 2>/dev/null || true
+            sleep 5
+          done
+          echo "No se pudo guardar tasa.json después de 3 intentos."
+          exit 1
