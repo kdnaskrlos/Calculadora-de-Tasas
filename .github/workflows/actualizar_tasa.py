@@ -10,6 +10,7 @@ Cómo calcula el valor:
 
 Si la consulta falla, el script termina con error y deja tasa.json como estaba.
 """
+import http.client
 import json
 import os
 import statistics
@@ -26,6 +27,9 @@ ANUNCIOS = 10          # cuántos anuncios se usan para cada lado
 MAX_HISTORIAL = 48     # puntos guardados (2 días si corre cada hora)
 INTENTOS = 3
 MIN_MINUTOS = 25       # el workflow corre cada 10 min, pero solo consulta si el valor tiene más de esto
+# Dólar oficial del BCV (DolarAPI, pública y sin clave). Campo "promedio" = tasa oficial.
+BCV_URL = "https://ve.dolarapi.com/v1/dolares/oficial"
+ERRORES_RED = (OSError, http.client.HTTPException, RuntimeError, ValueError, KeyError, AttributeError)
 
 
 def consultar(lado):
@@ -65,7 +69,7 @@ def consultar(lado):
             if not precios:
                 raise RuntimeError("Binance no devolvió anuncios para %s" % lado)
             return statistics.median(precios)
-        except (urllib.error.URLError, RuntimeError, ValueError, KeyError) as error:
+        except ERRORES_RED as error:
             ultimo_error = error
             print("Intento %d/%d (%s) falló: %s" % (intento, INTENTOS, lado, error), file=sys.stderr)
             if intento < INTENTOS:
@@ -107,6 +111,69 @@ def leer_anterior():
         return {}
 
 
+def normalizar_fecha(texto, ahora=None):
+    """Convierte una fecha ISO a UTC con formato 2026-10-22T14:30:22Z (o usa 'ahora' si no se entiende)."""
+    try:
+        fecha = datetime.fromisoformat(str(texto).replace("Z", "+00:00"))
+        if fecha.tzinfo is None:
+            fecha = fecha.replace(tzinfo=timezone.utc)
+        return fecha.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    except (TypeError, ValueError):
+        return (ahora or datetime.now(timezone.utc)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def consultar_bcv():
+    """Dólar oficial del BCV. Devuelve (valor, fecha ISO UTC) o None si falla (no detiene el proceso)."""
+    pedido = urllib.request.Request(
+        BCV_URL,
+        headers={
+            "Accept": "application/json",
+            "User-Agent": "Mozilla/5.0 (compatible; super-calculadora-ve)",
+        },
+    )
+    for intento in range(1, INTENTOS + 1):
+        try:
+            with urllib.request.urlopen(pedido, timeout=30) as respuesta:
+                datos = json.load(respuesta)
+            valor = None
+            for campo in ("promedio", "venta", "compra"):
+                candidato = datos.get(campo)
+                if isinstance(candidato, (int, float)) and candidato > 0:
+                    valor = float(candidato)
+                    break
+            if valor is None:
+                raise RuntimeError("DolarAPI no devolvió un valor válido")
+            return valor, normalizar_fecha(datos.get("fechaActualizacion"))
+        except ERRORES_RED as error:
+            print("Intento %d/%d (BCV) falló: %s" % (intento, INTENTOS, error), file=sys.stderr)
+            if intento < INTENTOS:
+                time.sleep(3 * intento)
+    print("Aviso: no se pudo obtener el dólar del BCV; se conserva el último valor guardado.", file=sys.stderr)
+    return None
+
+
+def construir_bcv(valor, fecha_api, anterior_bcv, ahora):
+    """Arma el bloque 'bcv' de tasa.json. La variación compara contra el valor anterior distinto
+    (el BCV cambia una vez por día hábil, no cada media hora)."""
+    anterior_bcv = anterior_bcv or {}
+    viejo = anterior_bcv.get("rate")
+    if isinstance(viejo, (int, float)) and viejo > 0 and abs(valor - viejo) > 1e-9:
+        previo = viejo
+        cambio = round((valor / viejo - 1) * 100, 2)
+    else:
+        previo = anterior_bcv.get("previous_rate")
+        cambio = anterior_bcv.get("change_pct")
+    return {
+        "pair": "USD/VES",
+        "source": "BCV (oficial)",
+        "rate": round(valor, 4),
+        "previous_rate": previo,
+        "change_pct": cambio,
+        "updated_at": fecha_api,
+        "checked_at": ahora.strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+
+
 def es_reciente(anterior, ahora):
     """True si el valor guardado se actualizó hace menos de MIN_MINUTOS."""
     try:
@@ -127,11 +194,20 @@ def main():
     compra = consultar("BUY")
     venta = consultar("SELL")
     nuevo = construir(compra, venta, anterior, datetime.now(timezone.utc))
+    # El BCV es secundario: si falla, se conserva el último valor y lo de Binance se guarda igual.
+    bcv = consultar_bcv()
+    if bcv:
+        nuevo["bcv"] = construir_bcv(bcv[0], bcv[1], anterior.get("bcv"), datetime.now(timezone.utc))
+    elif anterior.get("bcv"):
+        nuevo["bcv"] = anterior["bcv"]
     with open(RUTA, "w", encoding="utf-8") as archivo:
         json.dump(nuevo, archivo, ensure_ascii=False, indent=2)
         archivo.write("\n")
     print("USDT/VES = %s (compra %s, venta %s, cambio %s%%)" % (
         nuevo["rate"], nuevo["buy"], nuevo["sell"], nuevo["change_pct"]))
+    if nuevo.get("bcv"):
+        print("BCV USD/VES = %s (cambio %s%%, fuente actualizada %s)" % (
+            nuevo["bcv"]["rate"], nuevo["bcv"]["change_pct"], nuevo["bcv"]["updated_at"]))
 
 
 if __name__ == "__main__":
