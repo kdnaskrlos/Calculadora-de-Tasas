@@ -247,6 +247,28 @@ main { padding: 18px 16px 16px; display: flex; flex-direction: column; gap: 18px
 .rate-line .input-wrap { flex: 1; min-width: 150px; }
 .unit { flex: none; font-size: 12px; font-weight: 700; color: var(--ink-3); }
 .err { margin: 0; min-height: 16px; font-size: 12px; color: var(--danger); }
+.opts { display: flex; flex-direction: column; gap: 8px; border: 0; margin: 0; padding: 0; min-width: 0; }
+.opts legend { padding: 0; margin-bottom: 8px; }
+.opt {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer;
+  background: var(--surface-2); border: 1.5px solid var(--line); border-radius: 14px;
+  transition: border-color .15s, background .15s, box-shadow .15s;
+}
+.opt:hover { border-color: var(--accent-line); }
+.opt:has(input[type="radio"]:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.opt:has(input[type="radio"]:focus-visible) { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent); }
+.opt input[type="radio"] { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--btn); cursor: pointer; }
+.opt-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.opt-title { font-size: 14px; font-weight: 700; color: var(--ink); }
+.opt-sub { font-size: 12px; color: var(--ink-2); line-height: 1.4; }
+.opt-val { flex: none; font-family: var(--font-num); font-size: 15px; font-weight: 600; color: var(--ink); text-align: right; }
+.opt-val.none { font-family: var(--font-ui); font-size: 12px; font-weight: 600; color: var(--ink-3); }
+.opt.manual { flex-wrap: wrap; }
+.opt.manual .rate-line { flex: 1 1 100%; margin-left: 32px; }
+.opt.manual .input-wrap { height: 44px; padding: 0 12px; }
+.opt.manual .input-wrap input { font-size: 16px; }
+.ves-note { margin: 0; font-size: 12px; color: var(--warn); }
+.ves-note:empty, .err:empty { display: none; }
 .actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .btn {
   height: 42px; padding: 0 16px;
@@ -415,7 +437,7 @@ footer {
   </main>
 
   <main id="view-settings" hidden>
-    <p class="settings-intro">Escribe cuántas unidades de cada moneda equivalen a 1 dólar. Los cambios se aplican al instante en la calculadora.</p>
+    <p class="settings-intro">Escribe cuántos pesos equivalen a 1 dólar y elige de dónde sale la tasa en bolívares. Los cambios se aplican al instante en la calculadora.</p>
 
     <div class="rate-row">
       <span class="label"><label for="rate-cop">Peso colombiano</label></span>
@@ -428,16 +450,50 @@ footer {
       </div>
     </div>
 
-    <div class="rate-row">
-      <span class="label"><label for="rate-ves">Bolívar digital</label></span>
-      <div class="rate-line">
-        <span class="anchor">1 USD =</span>
-        <div class="input-wrap">
-          <input id="rate-ves" type="text" inputmode="decimal" autocomplete="off" placeholder="1.020">
-          <span class="unit">Bs.</span>
+    <fieldset class="opts">
+      <legend class="label">Bolívar digital</legend>
+
+      <div class="opt manual" id="opt-binance">
+        <input type="radio" name="ves-mode" value="binance" id="radio-binance" aria-label="Binance P2P">
+        <span class="opt-body">
+          <label class="opt-title" for="radio-binance">Binance P2P</label>
+          <span class="opt-sub" id="sub-binance">Tasa de Binance P2P</span>
+        </span>
+        <span class="opt-val none" id="val-binance">Sin dato</span>
+        <div class="rate-line">
+          <span class="anchor">Recargo: +</span>
+          <div class="input-wrap">
+            <input id="rate-recargo" type="text" inputmode="decimal" autocomplete="off" placeholder="10" aria-label="Recargo en bolívares sobre la tasa de Binance">
+            <span class="unit">Bs.</span>
+          </div>
         </div>
       </div>
-    </div>
+
+      <label class="opt">
+        <input type="radio" name="ves-mode" value="bcv">
+        <span class="opt-body">
+          <span class="opt-title">BCV oficial</span>
+          <span class="opt-sub" id="sub-bcv">Dólar oficial del Banco Central</span>
+        </span>
+        <span class="opt-val none" id="val-bcv">Sin dato</span>
+      </label>
+
+      <div class="opt manual" id="opt-manual">
+        <input type="radio" name="ves-mode" value="manual" id="radio-manual" aria-label="Tasa manual">
+        <span class="opt-body">
+          <label class="opt-title" for="rate-ves">Manual</label>
+          <span class="opt-sub">Escribe tú la tasa: cuántos Bs. equivalen a 1 USD</span>
+        </span>
+        <div class="rate-line">
+          <span class="anchor">1 USD =</span>
+          <div class="input-wrap">
+            <input id="rate-ves" type="text" inputmode="decimal" autocomplete="off" placeholder="1.020">
+            <span class="unit">Bs.</span>
+          </div>
+        </div>
+      </div>
+    </fieldset>
+    <p class="ves-note" id="ves-note" aria-live="polite"></p>
 
     <p class="err" id="rate-err" role="alert"></p>
     <p class="cross" id="cross-settings"></p>
@@ -455,7 +511,6 @@ footer {
         <span class="label">Binance P2P</span>
         <div class="usdt-actions">
           <button class="link-btn" id="btn-usdt-refresh" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>Actualizar</button>
-          <button class="link-btn" id="btn-usdt-use" type="button" disabled>Usar como tasa Bs.</button>
         </div>
       </div>
       <div class="quote">
@@ -473,7 +528,6 @@ footer {
         <span class="label">BCV oficial</span>
         <div class="usdt-actions">
           <button class="link-btn" id="btn-bcv-refresh" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>Actualizar</button>
-          <button class="link-btn" id="btn-bcv-use" type="button" disabled>Usar como tasa Bs.</button>
         </div>
       </div>
       <div class="quote">
@@ -503,11 +557,21 @@ footer {
   var KEY = "super-calculadora-tasas";
   var THEME_KEY = "super-calculadora-tema-v2";
   var HOUR = 60 * 60 * 1000;
-  var rates = { cop: DEFAULTS.cop, ves: DEFAULTS.ves };
+  var RECARGO_INICIAL = 10;   // Bs. que se suman a la tasa de Binance (se puede cambiar en Ajustes)
+  var recargo = RECARGO_INICIAL;
+  var MODES = ["binance", "bcv", "manual"];
+  var rates = { cop: DEFAULTS.cop, ves: DEFAULTS.ves };   // ves = tasa efectiva que usa la calculadora
+  var mode = "binance";                                   // fuente elegida para el bolívar (predeterminada: Binance P2P)
+  var manualVes = DEFAULTS.ves;                           // tasa escrita a mano
 
   try {
     var saved = JSON.parse(localStorage.getItem(KEY) || "null");
-    if (saved && saved.cop > 0 && saved.ves > 0) rates = { cop: saved.cop, ves: saved.ves };
+    if (saved && saved.cop > 0 && saved.ves > 0) {
+      rates = { cop: saved.cop, ves: saved.ves };
+      manualVes = saved.ves;
+      if (saved.v === 2 && MODES.indexOf(saved.mode) !== -1) mode = saved.mode;   // v:2 = guardado con la versión de 3 opciones
+      if (typeof saved.recargo === "number" && saved.recargo >= 0 && isFinite(saved.recargo)) recargo = saved.recargo;
+    }
   } catch (e) {}
 
   var nf = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -609,14 +673,20 @@ footer {
     wraps[cur].addEventListener("click", function () { el.focus(); });
   });
 
-  // Fuerza los campos de Ajustes a mostrar las tasas actuales (quita el foco si el campo estaba activo).
-  function syncRateFields() {
-    ["cop", "ves"].forEach(function (c) {
-      if (!rIn[c]) return;
-      if (document.activeElement === rIn[c]) rIn[c].blur();
-      rIn[c].value = nfRate.format(rates[c]);
-    });
-    var e = document.getElementById("rate-err"); if (e) e.textContent = "";
+  /* ---------- Tasa en bolívares según la fuente elegida ---------- */
+  // Binance: tasa de Binance + recargo. BCV: dólar oficial. Manual: lo que escribe la persona.
+  function vesDe(fuente) {
+    if (fuente === "binance") return tasa ? tasa.ves + recargo : null;
+    if (fuente === "bcv") return bcv ? bcv.ves : null;
+    return manualVes;
+  }
+  // Calcula la tasa efectiva. Si la fuente elegida aún no tiene dato, se usa la manual. Devuelve true si cambió.
+  function aplicarModo() {
+    var v = vesDe(mode);
+    if (v == null || !(v > 0)) v = manualVes;
+    var cambio = Math.abs(v - rates.ves) > 1e-9;
+    rates.ves = v;
+    return cambio;
   }
   function refreshLabels() {
     document.getElementById("tag-cop").textContent = "Tasa: " + fmt(rates.cop);
@@ -624,10 +694,7 @@ footer {
     var cross = "1 Bs. = " + nfRate.format(rates.cop / rates.ves) + " COP  ·  1.000 COP = " + nfRate.format(1000 * rates.ves / rates.cop) + " Bs.";
     document.getElementById("cross").textContent = cross;
     document.getElementById("cross-settings").textContent = cross;
-    // Mantiene los campos de Ajustes al día (sin pisar el que se está escribiendo).
-    ["cop", "ves"].forEach(function (c) {
-      if (rIn[c] && document.activeElement !== rIn[c]) rIn[c].value = nfRate.format(rates[c]);
-    });
+    renderAjustes(false);
     renderUsdt();
   }
 
@@ -644,14 +711,39 @@ footer {
   var rIn = { cop: document.getElementById("rate-cop"), ves: document.getElementById("rate-ves") };
   var err = document.getElementById("rate-err");
   var savedMsg = document.getElementById("saved");
+  var radios = document.querySelectorAll('input[name="ves-mode"]');
+  var elNote = document.getElementById("ves-note");
+  var NOMBRES = { binance: "Binance P2P", bcv: "BCV oficial", manual: "tasa manual" };
+  var rRec = document.getElementById("rate-recargo");
+  var optEl = {
+    binance: { val: document.getElementById("val-binance"), sub: document.getElementById("sub-binance") },
+    bcv: { val: document.getElementById("val-bcv"), sub: document.getElementById("sub-bcv") }
+  };
+
+  // Dibuja la pantalla de Ajustes con el estado actual. Los campos de texto solo se reescriben si no se están editando
+  // (o si se fuerza); las opciones y sus valores se actualizan siempre, así que los cambios se ven de inmediato.
+  function renderAjustes(forzar) {
+    if (forzar || document.activeElement !== rIn.cop) rIn.cop.value = nfRate.format(rates.cop);
+    if (forzar || document.activeElement !== rIn.ves) rIn.ves.value = nfRate.format(manualVes);
+    if (forzar || document.activeElement !== rRec) rRec.value = nfRate.format(recargo);
+    Array.prototype.forEach.call(radios, function (r) { r.checked = (r.value === mode); });
+    var b = vesDe("binance"), c = vesDe("bcv");
+    optEl.binance.val.textContent = b ? fmt(b) + " Bs." : "Sin dato";
+    optEl.binance.val.className = "opt-val" + (b ? "" : " none");
+    optEl.binance.sub.textContent = tasa ? "Binance " + fmt(tasa.ves) + " · " + ago(Date.now() - tasa.ts) : "Tasa de Binance P2P";
+    optEl.bcv.val.textContent = c ? fmt(c) + " Bs." : "Sin dato";
+    optEl.bcv.val.className = "opt-val" + (c ? "" : " none");
+    optEl.bcv.sub.textContent = bcv ? "Dólar oficial del Banco Central · " + ago(Date.now() - bcv.ts) : "Dólar oficial del Banco Central";
+    var falta = mode !== "manual" && vesDe(mode) == null;
+    elNote.textContent = falta ? "Todavía no hay dato de " + NOMBRES[mode] + ". Mientras tanto se usa tu tasa manual (" + fmt(manualVes) + " Bs.)." : "";
+  }
 
   function showSettings(on) {
     viewSet.hidden = !on;
     viewCalc.hidden = on;
     btnSet.setAttribute("aria-pressed", on ? "true" : "false");
     if (on) {
-      rIn.cop.value = nfRate.format(rates.cop);
-      rIn.ves.value = nfRate.format(rates.ves);
+      renderAjustes(true);
       err.textContent = ""; savedMsg.textContent = "";
     } else if (lastActive && inputs[lastActive].value) {
       recalc(lastActive);
@@ -661,37 +753,95 @@ footer {
   document.getElementById("btn-done").addEventListener("click", function () { showSettings(false); });
 
   function persistRates() {
-    try { localStorage.setItem(KEY, JSON.stringify(rates)); } catch (e) {}
+    try { localStorage.setItem(KEY, JSON.stringify({ cop: rates.cop, ves: manualVes, mode: mode, recargo: recargo, v: 2 })); } catch (e) {}
   }
 
-  ["cop", "ves"].forEach(function (cur) {
-    rIn[cur].addEventListener("input", function () {
-      rIn[cur].value = rIn[cur].value.replace(/[^\d.,]/g, "");
-      var n = parse(rIn[cur].value);
-      if (isNaN(n) || n <= 0) {
-        err.textContent = "Escribe un número mayor que cero.";
-        savedMsg.textContent = "";
-        return;
-      }
-      err.textContent = "";
-      rates[cur] = n;
-      persistRates();
-      refreshLabels();
-      savedMsg.textContent = "Tasa guardada.";
+  // Aplica la fuente elegida, guarda, refresca etiquetas y recalcula la calculadora si cambió la tasa.
+  function aplicarYMostrar() {
+    var cambio = aplicarModo();
+    persistRates();
+    refreshLabels();
+    if (cambio && lastActive && inputs[lastActive].value) recalc(lastActive);
+  }
+  function elegirModo(nuevo) {
+    mode = nuevo;
+    aplicarYMostrar();
+    err.textContent = "";
+    savedMsg.textContent = "Usando " + NOMBRES[mode] + ".";
+  }
+
+  Array.prototype.forEach.call(radios, function (r) {
+    r.addEventListener("change", function () { if (r.checked) elegirModo(r.value); });
+  });
+
+  rIn.cop.addEventListener("input", function () {
+    rIn.cop.value = rIn.cop.value.replace(/[^\d.,]/g, "");
+    var n = parse(rIn.cop.value);
+    if (isNaN(n) || n <= 0) {
+      err.textContent = "Escribe un número mayor que cero.";
+      savedMsg.textContent = "";
+      return;
+    }
+    err.textContent = "";
+    rates.cop = n;
+    aplicarYMostrar();
+    savedMsg.textContent = "Tasa guardada.";
+  });
+
+  // Recargo de Binance: editable (0 o más). Escribirlo o tocarlo selecciona la opción Binance.
+  rRec.addEventListener("focus", function () { if (mode !== "binance") elegirModo("binance"); });
+  rRec.addEventListener("input", function () {
+    rRec.value = rRec.value.replace(/[^\d.,]/g, "");
+    var n = parse(rRec.value);
+    if (isNaN(n) || n < 0) {
+      err.textContent = "Escribe el recargo en bolívares (0 o más).";
+      savedMsg.textContent = "";
+      return;
+    }
+    err.textContent = "";
+    recargo = n;
+    mode = "binance";
+    aplicarYMostrar();
+    savedMsg.textContent = "Recargo guardado.";
+  });
+  // Tocar cualquier parte de una opción (fuera de sus campos de texto) la selecciona.
+  [["opt-binance", "binance"], ["opt-manual", "manual"]].forEach(function (par) {
+    document.getElementById(par[0]).addEventListener("click", function (ev) {
+      var t = ev.target;
+      if (t && t.tagName === "INPUT") return;
+      if (mode !== par[1]) elegirModo(par[1]);
     });
+  });
+
+  // Tocar o escribir en el campo manual selecciona la opción Manual.
+  rIn.ves.addEventListener("focus", function () { if (mode !== "manual") elegirModo("manual"); });
+  rIn.ves.addEventListener("input", function () {
+    rIn.ves.value = rIn.ves.value.replace(/[^\d.,]/g, "");
+    var n = parse(rIn.ves.value);
+    if (isNaN(n) || n <= 0) {
+      err.textContent = "Escribe un número mayor que cero.";
+      savedMsg.textContent = "";
+      return;
+    }
+    err.textContent = "";
+    manualVes = n;
+    mode = "manual";
+    aplicarYMostrar();
+    savedMsg.textContent = "Tasa guardada.";
   });
   document.querySelectorAll("#view-settings .input-wrap, #usdt-edit .input-wrap").forEach(function (w) {
     w.addEventListener("click", function () { w.querySelector("input").focus(); });
   });
 
   document.getElementById("btn-reset").addEventListener("click", function () {
-    rates = { cop: DEFAULTS.cop, ves: DEFAULTS.ves };
-    persistRates();
-    rIn.cop.value = nfRate.format(rates.cop);
-    rIn.ves.value = nfRate.format(rates.ves);
+    rates.cop = DEFAULTS.cop;
+    manualVes = DEFAULTS.ves;
+    mode = "binance";
+    recargo = RECARGO_INICIAL;
+    aplicarYMostrar();
+    renderAjustes(true);
     err.textContent = "";
-    refreshLabels();
-    savedMsg.textContent = "Tasas restablecidas a 3.200 COP y 1.020 Bs.";
+    savedMsg.textContent = "Restablecido: 3.200 COP, Binance P2P + 10 Bs. y manual 1.020 Bs.";
   });
 
   /* ---------- USDT / VES desde tasa.json ---------- */
@@ -704,9 +854,7 @@ footer {
   var STALE_MS = 1.5 * HOUR;         // si el dato tiene más de 1,5 horas, se avisa
   var q = { val: document.getElementById("q-ves-val"), chg: document.getElementById("q-ves-chg"), date: document.getElementById("q-ves-date") };
   var elMeta = document.getElementById("usdt-meta");
-  var btnUse = document.getElementById("btn-usdt-use");
   var elMetaB = document.getElementById("bcv-meta");
-  var btnUseB = document.getElementById("btn-bcv-use");
   var nota = "";         // mensaje breve tras tocar Actualizar
   var notaB = "";        // ídem para la sección del BCV
   var notaTimer = 0;
@@ -750,7 +898,6 @@ footer {
       qb.chg.textContent = "";
       qb.chg.className = "q-chg";
       qb.date.textContent = estado === "cargando" ? "" : "Todavía sin dato del BCV";
-      btnUseB.disabled = true;
       elMetaB.className = "usdt-meta";
       elMetaB.textContent = estado === "error" ? "No se pudo leer el dato. Revisa tu conexión y toca Actualizar." : "";
       return;
@@ -764,7 +911,6 @@ footer {
       qb.chg.textContent = "";
       qb.chg.className = "q-chg";
     }
-    btnUseB.disabled = false;
     var base = "Dólar oficial del BCV. Frente a tu tasa en Bs.: " + pct(bcv.ves, rates.ves) + ".";
     if (estado === "error") {
       elMetaB.className = "usdt-meta stale";
@@ -782,7 +928,6 @@ footer {
       q.chg.textContent = "";
       q.chg.className = "q-chg";
       q.date.textContent = "";
-      btnUse.disabled = true;
       elMeta.className = "usdt-meta";
       elMeta.textContent =
         estado === "cargando" ? "Cargando el valor del USDT…" :
@@ -799,7 +944,6 @@ footer {
       q.chg.textContent = "";
       q.chg.className = "q-chg";
     }
-    btnUse.disabled = false;
     var age = Date.now() - tasa.ts;
     var diff = "Frente a tu tasa en Bs.: " + pct(tasa.ves, rates.ves) + ".";
     if (estado === "error") {
@@ -834,22 +978,15 @@ footer {
           bcv = { ves: d.bcv.rate, ts: isNaN(tb) ? (isNaN(ts) ? Date.now() : ts) : tb, changePct: typeof d.bcv.change_pct === "number" ? d.bcv.change_pct : null };
           try { localStorage.setItem(BCV_CACHE_KEY, JSON.stringify(bcv)); } catch (e) {}
         }
-        renderUsdt();
+        var cambioVes = aplicarModo();
+        refreshLabels();
+        if (cambioVes && lastActive && inputs[lastActive].value) recalc(lastActive);
       })
       .catch(function () {
         estado = "error";
         renderUsdt();
       });
   }
-
-  btnUse.addEventListener("click", function () {
-    if (!tasa) return;
-    rates = { cop: rates.cop, ves: tasa.ves };
-    persistRates();
-    refreshLabels();
-    syncRateFields();
-    if (lastActive && inputs[lastActive].value) recalc(lastActive);
-  });
 
   function mostrarNota(cual, texto) {
     if (cual === "bcv") { notaB = texto; } else { nota = texto; }
@@ -880,19 +1017,11 @@ footer {
   }
   btnRef.addEventListener("click", function () { pedirActualizacion("binance"); });
   btnRefB.addEventListener("click", function () { pedirActualizacion("bcv"); });
-  btnUseB.addEventListener("click", function () {
-    if (!bcv) return;
-    rates = { cop: rates.cop, ves: bcv.ves };
-    persistRates();
-    refreshLabels();
-    syncRateFields();
-    if (lastActive && inputs[lastActive].value) recalc(lastActive);
-  });
-
   cargarTasa();
   setInterval(cargarTasa, REFRESH_MS);
   setInterval(renderUsdt, 60 * 1000);
 
+  aplicarModo();
   refreshLabels();
 
   // Estado inicial: todos los valores en 0.
