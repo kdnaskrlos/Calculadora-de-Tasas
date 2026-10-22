@@ -266,9 +266,10 @@ footer {
   padding: 14px 16px 16px;
   border-top: 1px solid var(--line);
   background: var(--surface-2);
-  display: flex; flex-direction: column; gap: 10px;
+  display: flex; flex-direction: column; gap: 18px;
 }
-.usdt-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.usdt-head { display: flex; align-items: center; justify-content: space-between; gap: 6px 12px; flex-wrap: wrap; }
+.ref { display: flex; flex-direction: column; gap: 10px; }
 .link-btn {
   border: 0; background: transparent; padding: 4px 6px; margin: -4px -6px;
   font: 700 12px var(--font-ui); color: var(--accent-ink);
@@ -322,6 +323,7 @@ footer {
   background: var(--badge-bg);
   color: var(--coin);
 }
+.q-badge.bcv { background: var(--chip-blue-bg); color: var(--chip-blue-ink); }
 .q-name { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .q-name strong { font-size: 16px; font-weight: 700; color: var(--q-name); line-height: 1.2; }
 .q-name span { font-size: 13px; color: var(--ink-2); }
@@ -448,22 +450,43 @@ footer {
   </main>
 
     <footer>
-    <div class="usdt-head">
-      <span class="label">Referencia de mercado</span>
-      <div class="usdt-actions">
-        <button class="link-btn" id="btn-usdt-refresh" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>Actualizar</button>
-        <button class="link-btn" id="btn-usdt-use" type="button" disabled>Usar como tasa Bs.</button>
+    <section class="ref" aria-label="Binance P2P">
+      <div class="usdt-head">
+        <span class="label">Binance P2P</span>
+        <div class="usdt-actions">
+          <button class="link-btn" id="btn-usdt-refresh" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>Actualizar</button>
+          <button class="link-btn" id="btn-usdt-use" type="button" disabled>Usar como tasa Bs.</button>
+        </div>
       </div>
-    </div>
-    <div class="quote">
-      <div class="q-main">
-        <span class="q-badge" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h13l-3-3"/><path d="M17 17H4l3 3"/></svg></span>
-        <div class="q-name"><strong>Binance</strong><span>USDT / VES</span></div>
-        <div class="q-val"><b id="q-ves-val">—</b><span class="q-chg" id="q-ves-chg"></span></div>
+      <div class="quote">
+        <div class="q-main">
+          <span class="q-badge" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h13l-3-3"/><path d="M17 17H4l3 3"/></svg></span>
+          <div class="q-name"><strong>Binance</strong><span>USDT / VES</span></div>
+          <div class="q-val"><b id="q-ves-val">—</b><span class="q-chg" id="q-ves-chg"></span></div>
+        </div>
+        <p class="q-date" id="q-ves-date"></p>
       </div>
-      <p class="q-date" id="q-ves-date"></p>
-    </div>
-    <p class="usdt-meta" id="usdt-meta" aria-live="polite"></p>  </footer>
+      <p class="usdt-meta" id="usdt-meta" aria-live="polite"></p>
+    </section>
+    <section class="ref" aria-label="Banco Central de Venezuela">
+      <div class="usdt-head">
+        <span class="label">BCV oficial</span>
+        <div class="usdt-actions">
+          <button class="link-btn" id="btn-bcv-refresh" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>Actualizar</button>
+          <button class="link-btn" id="btn-bcv-use" type="button" disabled>Usar como tasa Bs.</button>
+        </div>
+      </div>
+      <div class="quote">
+        <div class="q-main">
+          <span class="q-badge bcv" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h18"/><path d="M6 18v-7M10 18v-7M14 18v-7M18 18v-7"/><path d="M12 2 20 7H4z"/></svg></span>
+          <div class="q-name"><strong>BCV</strong><span>USD / VES</span></div>
+          <div class="q-val"><b id="q-bcv-val">—</b><span class="q-chg" id="q-bcv-chg"></span></div>
+        </div>
+        <p class="q-date" id="q-bcv-date"></p>
+      </div>
+      <p class="usdt-meta" id="bcv-meta" aria-live="polite"></p>
+    </section>
+  </footer>
 </div>
 <p class="credit">Creado por KDNAS</p>
 <div class="install" id="install" role="dialog" aria-label="Instalar la calculadora" hidden>
@@ -669,14 +692,24 @@ footer {
   var q = { val: document.getElementById("q-ves-val"), chg: document.getElementById("q-ves-chg"), date: document.getElementById("q-ves-date") };
   var elMeta = document.getElementById("usdt-meta");
   var btnUse = document.getElementById("btn-usdt-use");
+  var elMetaB = document.getElementById("bcv-meta");
+  var btnUseB = document.getElementById("btn-bcv-use");
   var nota = "";         // mensaje breve tras tocar Actualizar
+  var notaB = "";        // ídem para la sección del BCV
   var notaTimer = 0;
   var tasa = null;       // { ves, ts, changePct }
+  var bcv = null;        // { ves, ts, changePct } dólar oficial del BCV
+  var BCV_CACHE_KEY = "super-calculadora-bcv-cache";
+  var qb = { val: document.getElementById("q-bcv-val"), chg: document.getElementById("q-bcv-chg"), date: document.getElementById("q-bcv-date") };
   var estado = "cargando"; // cargando | ok | vacio | error
 
   try {
     var cache = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
     if (cache && cache.ves > 0 && cache.ts > 0) tasa = cache;
+  } catch (e) {}
+  try {
+    var cacheB = JSON.parse(localStorage.getItem(BCV_CACHE_KEY) || "null");
+    if (cacheB && cacheB.ves > 0 && cacheB.ts > 0) bcv = cacheB;
   } catch (e) {}
 
   function ago(ms) {
@@ -698,7 +731,39 @@ footer {
   var nfChg = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: "exceptZero" });
   function pct(value, base) { return nfPct.format((value / base - 1) * 100) + " %"; }
 
+  function renderBcv() {
+    if (!bcv) {
+      qb.val.textContent = "—";
+      qb.chg.textContent = "";
+      qb.chg.className = "q-chg";
+      qb.date.textContent = estado === "cargando" ? "" : "Todavía sin dato del BCV";
+      btnUseB.disabled = true;
+      elMetaB.className = "usdt-meta";
+      elMetaB.textContent = estado === "error" ? "No se pudo leer el dato. Revisa tu conexión y toca Actualizar." : "";
+      return;
+    }
+    qb.val.textContent = fmt(bcv.ves);
+    qb.date.textContent = stamp(bcv.ts);
+    if (typeof bcv.changePct === "number") {
+      qb.chg.textContent = nfChg.format(bcv.changePct) + "%";
+      qb.chg.className = "q-chg" + (bcv.changePct > 0 ? " up" : bcv.changePct < 0 ? " down" : "");
+    } else {
+      qb.chg.textContent = "";
+      qb.chg.className = "q-chg";
+    }
+    btnUseB.disabled = false;
+    var base = "Dólar oficial del BCV. Frente a tu tasa en Bs.: " + pct(bcv.ves, rates.ves) + ".";
+    if (estado === "error") {
+      elMetaB.className = "usdt-meta stale";
+      elMetaB.textContent = "No se pudo actualizar. Se muestra el último valor guardado. " + base;
+    } else {
+      elMetaB.className = "usdt-meta";
+      elMetaB.textContent = base + (notaB ? " " + notaB : "");
+    }
+  }
+
   function renderUsdt() {
+    renderBcv();
     if (!tasa) {
       q.val.textContent = "—";
       q.chg.textContent = "";
@@ -729,10 +794,10 @@ footer {
       elMeta.textContent = "No se pudo actualizar. Se muestra el último valor guardado (" + ago(age) + "). " + diff;
     } else if (age >= STALE_MS) {
       elMeta.className = "usdt-meta stale";
-      elMeta.textContent = "El valor tiene " + ago(age).replace("hace ", "") + " sin actualizarse. Revisa la pestaña Actions en GitHub. " + diff + (nota ? " " + nota : "");
+      elMeta.textContent = "El valor de Binance tiene " + ago(age).replace("hace ", "") + " sin actualizarse. Revisa la pestaña Actions en GitHub. " + diff + (nota ? " " + nota : "");
     } else {
       elMeta.className = "usdt-meta";
-      elMeta.textContent = "Actualizado " + ago(age) + ". " + diff + (nota ? " " + nota : "");
+      elMeta.textContent = "Binance actualizado " + ago(age) + ". " + diff + (nota ? " " + nota : "");
     }
   }
 
@@ -751,6 +816,11 @@ footer {
         } else {
           estado = tasa ? "ok" : "vacio";
         }
+        if (d && d.bcv && d.bcv.rate > 0) {
+          var tb = Date.parse(d.bcv.updated_at);
+          bcv = { ves: d.bcv.rate, ts: isNaN(tb) ? (isNaN(ts) ? Date.now() : ts) : tb, changePct: typeof d.bcv.change_pct === "number" ? d.bcv.change_pct : null };
+          try { localStorage.setItem(BCV_CACHE_KEY, JSON.stringify(bcv)); } catch (e) {}
+        }
         renderUsdt();
       })
       .catch(function () {
@@ -767,23 +837,41 @@ footer {
     if (lastActive && inputs[lastActive].value) recalc(lastActive);
   });
 
-  function mostrarNota(texto) {
-    nota = texto;
+  function mostrarNota(cual, texto) {
+    if (cual === "bcv") { notaB = texto; } else { nota = texto; }
     renderUsdt();
     clearTimeout(notaTimer);
-    notaTimer = setTimeout(function () { nota = ""; renderUsdt(); }, 8000);
+    notaTimer = setTimeout(function () { nota = ""; notaB = ""; renderUsdt(); }, 8000);
   }
   var btnRef = document.getElementById("btn-usdt-refresh");
-  btnRef.addEventListener("click", function () {
-    var antes = tasa ? tasa.ts : 0;
-    btnRef.disabled = true;
-    btnRef.classList.add("busy");
-    cargarTasa().then(function () {
-      btnRef.disabled = false;
-      btnRef.classList.remove("busy");
-      if (estado === "error" || !tasa) return;
-      mostrarNota(tasa.ts === antes ? "Ya tienes el dato más reciente." : "Valor actualizado.");
+  var btnRefB = document.getElementById("btn-bcv-refresh");
+  function ocupado(on) {
+    [btnRef, btnRefB].forEach(function (b) {
+      b.disabled = on;
+      if (on) { b.classList.add("busy"); } else { b.classList.remove("busy"); }
     });
+  }
+  function huella(cual) {
+    if (cual === "bcv") return bcv ? bcv.ts + "|" + bcv.ves : "";
+    return tasa ? String(tasa.ts) : "";
+  }
+  function pedirActualizacion(cual) {
+    var antes = huella(cual);
+    ocupado(true);
+    cargarTasa().then(function () {
+      ocupado(false);
+      if (estado === "error" || !huella(cual)) return;
+      mostrarNota(cual, huella(cual) === antes ? "Ya tienes el dato más reciente." : "Valor actualizado.");
+    });
+  }
+  btnRef.addEventListener("click", function () { pedirActualizacion("binance"); });
+  btnRefB.addEventListener("click", function () { pedirActualizacion("bcv"); });
+  btnUseB.addEventListener("click", function () {
+    if (!bcv) return;
+    rates = { cop: rates.cop, ves: bcv.ves };
+    persistRates();
+    refreshLabels();
+    if (lastActive && inputs[lastActive].value) recalc(lastActive);
   });
 
   cargarTasa();
