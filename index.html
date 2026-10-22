@@ -488,7 +488,7 @@ footer {
         <div class="rate-line">
           <span class="anchor">1 USD =</span>
           <div class="input-wrap">
-            <input id="rate-ves" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
+            <input id="rate-ves" type="text" inputmode="decimal" autocomplete="off" placeholder="">
             <span class="unit">Bs.</span>
           </div>
         </div>
@@ -722,7 +722,7 @@ footer {
   // (o si se fuerza); las opciones y sus valores se actualizan siempre, así que los cambios se ven de inmediato.
   function renderAjustes(forzar) {
     if (forzar || document.activeElement !== rIn.cop) rIn.cop.value = nfRate.format(rates.cop);
-    if (forzar || document.activeElement !== rIn.ves) rIn.ves.value = nfRate.format(manualVes);
+    if (forzar || document.activeElement !== rIn.ves) rIn.ves.value = manualVes > 0 ? nfRate.format(manualVes) : "";
     if (forzar || document.activeElement !== rRec) rRec.value = recargo > 0 ? nfRate.format(recargo) : "";
     Array.prototype.forEach.call(radios, function (r) { r.checked = (r.value === mode); });
     var b = vesDe("binance"), c = vesDe("bcv");
