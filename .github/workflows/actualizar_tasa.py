@@ -25,6 +25,7 @@ RUTA = os.environ.get("TASA_RUTA", "tasa.json")
 ANUNCIOS = 10          # cuántos anuncios se usan para cada lado
 MAX_HISTORIAL = 48     # puntos guardados (2 días si corre cada hora)
 INTENTOS = 3
+MIN_MINUTOS = 25       # el workflow corre cada 10 min, pero solo consulta si el valor tiene más de esto
 
 
 def consultar(lado):
@@ -106,10 +107,26 @@ def leer_anterior():
         return {}
 
 
+def es_reciente(anterior, ahora):
+    """True si el valor guardado se actualizó hace menos de MIN_MINUTOS."""
+    try:
+        marca = datetime.strptime(anterior.get("updated_at"), "%Y-%m-%dT%H:%M:%SZ")
+    except (TypeError, ValueError):
+        return False
+    edad = (ahora.replace(tzinfo=None) - marca).total_seconds() / 60
+    return 0 <= edad < MIN_MINUTOS
+
+
 def main():
+    ahora = datetime.now(timezone.utc)
+    anterior = leer_anterior()
+    # FORZAR=1 (ejecución manual) siempre consulta; las programadas saltan si el dato es reciente.
+    if not os.environ.get("FORZAR") and es_reciente(anterior, ahora):
+        print("El valor tiene menos de %d minutos; no se consulta Binance." % MIN_MINUTOS)
+        return
     compra = consultar("BUY")
     venta = consultar("SELL")
-    nuevo = construir(compra, venta, leer_anterior(), datetime.now(timezone.utc))
+    nuevo = construir(compra, venta, anterior, datetime.now(timezone.utc))
     with open(RUTA, "w", encoding="utf-8") as archivo:
         json.dump(nuevo, archivo, ensure_ascii=False, indent=2)
         archivo.write("\n")

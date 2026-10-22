@@ -2,7 +2,10 @@ name: Actualizar tasa USDT
 
 on:
   schedule:
-    - cron: "5,35 * * * *"   # cada hora, al minuto 5 (hora UTC)
+    # Corre cada 10 minutos (evitando el minuto 0, el más saturado). El script solo consulta
+    # Binance si el valor guardado tiene más de 25 minutos, así queda cada ~30 minutos aunque
+    # GitHub se salte alguna ejecución.
+    - cron: "7,17,27,37,47,57 * * * *"
   workflow_dispatch:       # permite ejecutarlo a mano desde la pestaña Actions
 
 permissions:
@@ -23,6 +26,8 @@ jobs:
           python-version: "3.12"
 
       - name: Consultar Binance P2P
+        env:
+          FORZAR: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
         run: |
           SCRIPT=$(find . -name actualizar_tasa.py -not -path "./.git/*" | head -n 1)
           if [ -z "$SCRIPT" ]; then
