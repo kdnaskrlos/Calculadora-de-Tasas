@@ -699,7 +699,8 @@ footer {
   document.getElementById("btn-clear").addEventListener("click", function () {
     Object.keys(inputs).forEach(function (c) { inputs[c].value = fmt(0); });
     setActive(null);
-    inputs.usd.focus();
+    // No se selecciona ningún campo: se quita el foco para que tampoco salga el teclado en el móvil.
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   });
 
   /* ---------- Configuración de tasas ---------- */
