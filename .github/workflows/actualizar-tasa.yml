@@ -2,7 +2,7 @@ name: Actualizar tasa USDT
 
 on:
   schedule:
-    - cron: "5 * * * *"   # cada hora, al minuto 5 (hora UTC)
+    - cron: "5,35 * * * *"   # cada hora, al minuto 5 (hora UTC)
   workflow_dispatch:       # permite ejecutarlo a mano desde la pestaña Actions
 
 permissions:
