@@ -615,6 +615,10 @@ footer {
     var cross = "1 Bs. = " + nfRate.format(rates.cop / rates.ves) + " COP  ·  1.000 COP = " + nfRate.format(1000 * rates.ves / rates.cop) + " Bs.";
     document.getElementById("cross").textContent = cross;
     document.getElementById("cross-settings").textContent = cross;
+    // Mantiene los campos de Ajustes al día (sin pisar el que se está escribiendo).
+    ["cop", "ves"].forEach(function (c) {
+      if (rIn[c] && document.activeElement !== rIn[c]) rIn[c].value = nfRate.format(rates[c]);
+    });
     renderUsdt();
   }
 
