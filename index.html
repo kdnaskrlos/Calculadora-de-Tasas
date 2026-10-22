@@ -437,7 +437,6 @@ footer {
       </div>
     </div>
 
-    <p class="cross" id="cross"></p>
   </main>
 
   <main id="view-settings" hidden>
@@ -498,7 +497,6 @@ footer {
     <p class="ves-note" id="ves-note" aria-live="polite"></p>
 
     <p class="err" id="rate-err" role="alert"></p>
-    <p class="cross" id="cross-settings"></p>
 
     <div class="actions">
       <button class="btn primary" id="btn-done" type="button">Listo</button>
@@ -694,11 +692,6 @@ footer {
   function refreshLabels() {
     document.getElementById("tag-cop").textContent = "Tasa: " + fmt(rates.cop);
     document.getElementById("tag-ves").textContent = "Tasa: " + fmt(rates.ves);
-    var cross = rates.ves > 0
-      ? "1 Bs. = " + nfRate.format(rates.cop / rates.ves) + " COP  ·  1.000 COP = " + nfRate.format(1000 * rates.ves / rates.cop) + " Bs."
-      : "Define la tasa en bolívares en Ajustes.";
-    document.getElementById("cross").textContent = cross;
-    document.getElementById("cross-settings").textContent = cross;
     renderAjustes(false);
     renderUsdt();
   }
@@ -738,7 +731,7 @@ footer {
     optEl.binance.sub.textContent = tasa ? "Binance " + fmt(tasa.ves) + " · " + ago(Date.now() - tasa.ts) : "Tasa de Binance P2P";
     optEl.bcv.val.textContent = c ? fmt(c) + " Bs." : "Sin dato";
     optEl.bcv.val.className = "opt-val" + (c ? "" : " none");
-    optEl.bcv.sub.textContent = bcv ? "Dólar oficial del Banco Central · " + ago(Date.now() - bcv.ts) : "Dólar oficial del Banco Central";
+    optEl.bcv.sub.textContent = bcv ? "Dólar oficial del Banco Central · " + ago(Date.now() - (bcv.checked || bcv.ts)) : "Dólar oficial del Banco Central";
     var falta = mode !== "manual" && vesDe(mode) == null;
     elNote.textContent = falta ? "Todavía no hay dato de " + NOMBRES[mode] + ". Mientras tanto se usa tu tasa manual" + (manualVes > 0 ? " (" + fmt(manualVes) + " Bs.)." : ", que está en 0.") : "";
   }
@@ -908,7 +901,7 @@ footer {
       qb.chg.textContent = "";
       qb.chg.className = "q-chg";
     }
-    var base = "Frente a tu tasa en Bs.: " + pct(bcv.ves, rates.ves) + ".";
+    var base = ago(Date.now() - (bcv.checked || bcv.ts)) + " / Frente a tu tasa en Bs.: " + pct(bcv.ves, rates.ves) + ".";
     if (estado === "error") {
       elMetaB.className = "usdt-meta stale";
       elMetaB.textContent = "No se pudo actualizar. Se muestra el último valor guardado. " + base;
@@ -951,7 +944,7 @@ footer {
       elMeta.textContent = "El valor de Binance tiene " + ago(age).replace("hace ", "") + " sin actualizarse. Revisa la pestaña Actions en GitHub. " + diff + (nota ? " " + nota : "");
     } else {
       elMeta.className = "usdt-meta";
-      elMeta.textContent = "Actualizado " + ago(age) + " / " + diff + (nota ? " " + nota : "");
+      elMeta.textContent = ago(age) + " / " + diff + (nota ? " " + nota : "");
     }
   }
 
@@ -972,7 +965,8 @@ footer {
         }
         if (d && d.bcv && d.bcv.rate > 0) {
           var tb = Date.parse(d.bcv.updated_at);
-          bcv = { ves: d.bcv.rate, ts: isNaN(tb) ? (isNaN(ts) ? Date.now() : ts) : tb, changePct: typeof d.bcv.change_pct === "number" ? d.bcv.change_pct : null };
+          var tc = Date.parse(d.bcv.checked_at);
+          bcv = { ves: d.bcv.rate, ts: isNaN(tb) ? (isNaN(ts) ? Date.now() : ts) : tb, checked: isNaN(tc) ? null : tc, changePct: typeof d.bcv.change_pct === "number" ? d.bcv.change_pct : null };
           try { localStorage.setItem(BCV_CACHE_KEY, JSON.stringify(bcv)); } catch (e) {}
         }
         var cambioVes = aplicarModo();
