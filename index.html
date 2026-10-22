@@ -240,7 +240,6 @@ main { padding: 18px 16px 16px; display: flex; flex-direction: column; gap: 18px
 }
 
 /* Configuración */
-.settings-intro { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink-2); max-width: 60ch; }
 .rate-row { display: flex; flex-direction: column; gap: 8px; }
 .rate-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .rate-line .anchor { font-family: var(--font-num); font-size: 13px; color: var(--ink-2); white-space: nowrap; }
@@ -265,7 +264,10 @@ main { padding: 18px 16px 16px; display: flex; flex-direction: column; gap: 18px
 .opt-val.none { font-family: var(--font-ui); font-size: 12px; font-weight: 600; color: var(--ink-3); }
 .opt.manual { flex-wrap: wrap; }
 .opt.manual .rate-line { flex: 1 1 100%; margin-left: 32px; }
-.opt.manual .input-wrap { height: 44px; padding: 0 12px; }
+.opt.manual .rate-line { flex-wrap: nowrap; gap: 8px; min-width: 0; }
+.opt.manual .rate-line .anchor { font-size: 12px; }
+.opt.manual .rate-line .input-wrap { flex: 1 1 0; min-width: 0; max-width: 190px; height: 44px; padding: 0 10px; gap: 6px; }
+@media (max-width: 420px) { .opt.manual .rate-line { margin-left: 0; } }
 .opt.manual .input-wrap input { font-size: 16px; }
 .ves-note { margin: 0; font-size: 12px; color: var(--warn); }
 .ves-note:empty, .err:empty { display: none; }
@@ -281,7 +283,9 @@ main { padding: 18px 16px 16px; display: flex; flex-direction: column; gap: 18px
 .btn.primary { background: var(--btn); border-color: var(--btn); color: var(--btn-ink); flex: 1; }
 .btn.primary:hover { filter: brightness(.94); background: var(--btn); }
 .btn.small { height: 38px; padding: 0 12px; font-size: 12px; }
-.saved { font-size: 12px; color: var(--accent-ink); min-height: 16px; margin: 0; }
+.saved { font-size: 12px; color: var(--accent-ink); margin: 0; }
+.saved:empty { display: none; }
+#view-settings { gap: 14px; padding-bottom: 14px; }
 
 /* Pie: referencia USDT */
 footer {
@@ -425,7 +429,7 @@ footer {
           <svg class="ic-ves" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="3"/><rect x="7.5" y="5.5" width="9" height="4" rx="1"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>
           <label for="in-ves">Bolívar digital (VES)</label>
         </span>
-        <span class="tag" id="tag-ves">Tasa: 1.020,00</span>
+        <span class="tag" id="tag-ves">Tasa: 0,00</span>
       </div>
       <div class="input-wrap" data-cur="ves">
         <span class="sym">Bs.</span>
@@ -437,8 +441,6 @@ footer {
   </main>
 
   <main id="view-settings" hidden>
-    <p class="settings-intro">Escribe cuántos pesos equivalen a 1 dólar y elige de dónde sale la tasa en bolívares. Los cambios se aplican al instante en la calculadora.</p>
-
     <div class="rate-row">
       <span class="label"><label for="rate-cop">Peso colombiano</label></span>
       <div class="rate-line">
@@ -463,7 +465,7 @@ footer {
         <div class="rate-line">
           <span class="anchor">Recargo: +</span>
           <div class="input-wrap">
-            <input id="rate-recargo" type="text" inputmode="decimal" autocomplete="off" placeholder="10" aria-label="Recargo en bolívares sobre la tasa de Binance">
+            <input id="rate-recargo" type="text" inputmode="decimal" autocomplete="off" placeholder="" aria-label="Recargo en bolívares sobre la tasa de Binance">
             <span class="unit">Bs.</span>
           </div>
         </div>
@@ -487,7 +489,7 @@ footer {
         <div class="rate-line">
           <span class="anchor">1 USD =</span>
           <div class="input-wrap">
-            <input id="rate-ves" type="text" inputmode="decimal" autocomplete="off" placeholder="1.020">
+            <input id="rate-ves" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
             <span class="unit">Bs.</span>
           </div>
         </div>
@@ -553,7 +555,7 @@ footer {
 </div>
 <script>
 (function () {
-  var DEFAULTS = { cop: 3200, ves: 1020 };
+  var DEFAULTS = { cop: 3200, ves: 0 };   // ves = tasa manual inicial (0 = sin definir)
   var KEY = "super-calculadora-tasas";
   var THEME_KEY = "super-calculadora-tema-v2";
   var HOUR = 60 * 60 * 1000;
@@ -566,10 +568,11 @@ footer {
 
   try {
     var saved = JSON.parse(localStorage.getItem(KEY) || "null");
-    if (saved && saved.cop > 0 && saved.ves > 0) {
+    if (saved && saved.cop > 0 && saved.ves >= 0) {
       rates = { cop: saved.cop, ves: saved.ves };
-      manualVes = saved.ves;
-      if (saved.v === 2 && MODES.indexOf(saved.mode) !== -1) mode = saved.mode;   // v:2 = guardado con la versión de 3 opciones
+      // Antes la tasa manual venía en 1.020 por defecto; si no se tocó, pasa a 0.
+      manualVes = (saved.v !== 3 && saved.ves === 1020) ? 0 : saved.ves;
+      if ((saved.v === 2 || saved.v === 3) && MODES.indexOf(saved.mode) !== -1) mode = saved.mode;   // v:2 = guardado con la versión de 3 opciones
       if (typeof saved.recargo === "number" && saved.recargo >= 0 && isFinite(saved.recargo)) recargo = saved.recargo;
     }
   } catch (e) {}
@@ -598,7 +601,7 @@ footer {
   }
 
   // Convierte cualquier moneda a USD y luego a las demás.
-  function toUsd(cur, amount) { return cur === "usd" ? amount : amount / rates[cur]; }
+  function toUsd(cur, amount) { return cur === "usd" ? amount : (rates[cur] > 0 ? amount / rates[cur] : 0); }
   function fromUsd(cur, usdAmt) { return cur === "usd" ? usdAmt : usdAmt * rates[cur]; }
   function convertAll(cur, amount) {
     var base = toUsd(cur, amount);
@@ -691,7 +694,9 @@ footer {
   function refreshLabels() {
     document.getElementById("tag-cop").textContent = "Tasa: " + fmt(rates.cop);
     document.getElementById("tag-ves").textContent = "Tasa: " + fmt(rates.ves);
-    var cross = "1 Bs. = " + nfRate.format(rates.cop / rates.ves) + " COP  ·  1.000 COP = " + nfRate.format(1000 * rates.ves / rates.cop) + " Bs.";
+    var cross = rates.ves > 0
+      ? "1 Bs. = " + nfRate.format(rates.cop / rates.ves) + " COP  ·  1.000 COP = " + nfRate.format(1000 * rates.ves / rates.cop) + " Bs."
+      : "Define la tasa en bolívares en Ajustes.";
     document.getElementById("cross").textContent = cross;
     document.getElementById("cross-settings").textContent = cross;
     renderAjustes(false);
@@ -725,7 +730,7 @@ footer {
   function renderAjustes(forzar) {
     if (forzar || document.activeElement !== rIn.cop) rIn.cop.value = nfRate.format(rates.cop);
     if (forzar || document.activeElement !== rIn.ves) rIn.ves.value = nfRate.format(manualVes);
-    if (forzar || document.activeElement !== rRec) rRec.value = nfRate.format(recargo);
+    if (forzar || document.activeElement !== rRec) rRec.value = recargo > 0 ? nfRate.format(recargo) : "";
     Array.prototype.forEach.call(radios, function (r) { r.checked = (r.value === mode); });
     var b = vesDe("binance"), c = vesDe("bcv");
     optEl.binance.val.textContent = b ? fmt(b) + " Bs." : "Sin dato";
@@ -735,7 +740,7 @@ footer {
     optEl.bcv.val.className = "opt-val" + (c ? "" : " none");
     optEl.bcv.sub.textContent = bcv ? "Dólar oficial del Banco Central · " + ago(Date.now() - bcv.ts) : "Dólar oficial del Banco Central";
     var falta = mode !== "manual" && vesDe(mode) == null;
-    elNote.textContent = falta ? "Todavía no hay dato de " + NOMBRES[mode] + ". Mientras tanto se usa tu tasa manual (" + fmt(manualVes) + " Bs.)." : "";
+    elNote.textContent = falta ? "Todavía no hay dato de " + NOMBRES[mode] + ". Mientras tanto se usa tu tasa manual" + (manualVes > 0 ? " (" + fmt(manualVes) + " Bs.)." : ", que está en 0.") : "";
   }
 
   function showSettings(on) {
@@ -753,7 +758,7 @@ footer {
   document.getElementById("btn-done").addEventListener("click", function () { showSettings(false); });
 
   function persistRates() {
-    try { localStorage.setItem(KEY, JSON.stringify({ cop: rates.cop, ves: manualVes, mode: mode, recargo: recargo, v: 2 })); } catch (e) {}
+    try { localStorage.setItem(KEY, JSON.stringify({ cop: rates.cop, ves: manualVes, mode: mode, recargo: recargo, v: 3 })); } catch (e) {}
   }
 
   // Aplica la fuente elegida, guarda, refresca etiquetas y recalcula la calculadora si cambió la tasa.
@@ -793,11 +798,7 @@ footer {
   rRec.addEventListener("input", function () {
     rRec.value = rRec.value.replace(/[^\d.,]/g, "");
     var n = parse(rRec.value);
-    if (isNaN(n) || n < 0) {
-      err.textContent = "Escribe el recargo en bolívares (0 o más).";
-      savedMsg.textContent = "";
-      return;
-    }
+    if (isNaN(n)) n = 0;   // campo vacío: no se suma nada
     err.textContent = "";
     recargo = n;
     mode = "binance";
@@ -818,11 +819,7 @@ footer {
   rIn.ves.addEventListener("input", function () {
     rIn.ves.value = rIn.ves.value.replace(/[^\d.,]/g, "");
     var n = parse(rIn.ves.value);
-    if (isNaN(n) || n <= 0) {
-      err.textContent = "Escribe un número mayor que cero.";
-      savedMsg.textContent = "";
-      return;
-    }
+    if (isNaN(n)) n = 0;   // campo vacío = 0
     err.textContent = "";
     manualVes = n;
     mode = "manual";
@@ -841,7 +838,7 @@ footer {
     aplicarYMostrar();
     renderAjustes(true);
     err.textContent = "";
-    savedMsg.textContent = "Restablecido: 3.200 COP, Binance P2P + 10 Bs. y manual 1.020 Bs.";
+    savedMsg.textContent = "Restablecido: 3.200 COP, Binance P2P con recargo de 10 Bs. y tasa manual en 0.";
   });
 
   /* ---------- USDT / VES desde tasa.json ---------- */
@@ -890,7 +887,7 @@ footer {
     return two(d.getDate()) + "-" + two(d.getMonth() + 1) + "-" + d.getFullYear() + " " + two(h) + ":" + two(d.getMinutes()) + " " + ap;
   }
   var nfChg = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: "exceptZero" });
-  function pct(value, base) { return nfPct.format((value / base - 1) * 100) + " %"; }
+  function pct(value, base) { return base > 0 ? nfPct.format((value / base - 1) * 100) + " %" : "—"; }
 
   function renderBcv() {
     if (!bcv) {
@@ -911,7 +908,7 @@ footer {
       qb.chg.textContent = "";
       qb.chg.className = "q-chg";
     }
-    var base = "Dólar oficial del BCV. Frente a tu tasa en Bs.: " + pct(bcv.ves, rates.ves) + ".";
+    var base = "Frente a tu tasa en Bs.: " + pct(bcv.ves, rates.ves) + ".";
     if (estado === "error") {
       elMetaB.className = "usdt-meta stale";
       elMetaB.textContent = "No se pudo actualizar. Se muestra el último valor guardado. " + base;
@@ -954,7 +951,7 @@ footer {
       elMeta.textContent = "El valor de Binance tiene " + ago(age).replace("hace ", "") + " sin actualizarse. Revisa la pestaña Actions en GitHub. " + diff + (nota ? " " + nota : "");
     } else {
       elMeta.className = "usdt-meta";
-      elMeta.textContent = "Binance actualizado " + ago(age) + ". " + diff + (nota ? " " + nota : "");
+      elMeta.textContent = "Actualizado " + ago(age) + " / " + diff + (nota ? " " + nota : "");
     }
   }
 
