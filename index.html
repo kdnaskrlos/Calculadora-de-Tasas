@@ -1,8 +1,9 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>try{var t=localStorage.getItem("super-calculadora-tema-v2");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
 <title>Súper Calculadora</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap">
 <style>
@@ -267,6 +268,20 @@ footer {
   cursor: pointer; border-radius: 6px;
 }
 .link-btn:hover { text-decoration: underline; }
+.link-btn[disabled] { opacity: .45; cursor: default; text-decoration: none; }
+.link-btn svg { vertical-align: -2px; margin-right: 3px; }
+.usdt-actions { display: flex; align-items: center; gap: 14px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.link-btn.busy svg { animation: spin .8s linear infinite; }
+.usdt-hint { margin: 0; font-size: 12px; line-height: 1.5; color: var(--ink-3); }
+.usdt-hint a { color: var(--accent-ink); font-weight: 700; }
+.credit {
+  max-width: 420px; margin: 14px auto 0;
+  text-align: center;
+  font-size: 11px; letter-spacing: .04em;
+  color: var(--ink-2);
+}
+@media (prefers-reduced-motion: reduce) { .link-btn.busy svg { animation: none; } }
 .quote {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -411,7 +426,10 @@ footer {
     <footer>
     <div class="usdt-head">
       <span class="label">Referencia de mercado</span>
-      <button class="link-btn" id="btn-usdt-use" type="button" disabled>Usar como tasa Bs.</button>
+      <div class="usdt-actions">
+        <button class="link-btn" id="btn-usdt-refresh" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>Actualizar</button>
+        <button class="link-btn" id="btn-usdt-use" type="button" disabled>Usar como tasa Bs.</button>
+      </div>
     </div>
     <div class="quote">
       <div class="q-main">
@@ -422,13 +440,15 @@ footer {
       <p class="q-date" id="q-ves-date"></p>
     </div>
     <p class="usdt-meta" id="usdt-meta" aria-live="polite"></p>
+    <p class="usdt-hint" id="usdt-hint" hidden>El valor se renueva cada hora. <a id="lnk-actions" href="#" target="_blank" rel="noopener">Pedir uno nuevo a Binance ahora</a>, espera uno o dos minutos y toca Actualizar.</p>
   </footer>
 </div>
+<p class="credit">Creado por KDNAS</p>
 <script>
 (function () {
   var DEFAULTS = { cop: 3200, ves: 1020 };
   var KEY = "super-calculadora-tasas";
-  var THEME_KEY = "super-calculadora-tema";
+  var THEME_KEY = "super-calculadora-tema-v2";
   var HOUR = 60 * 60 * 1000;
   var rates = { cop: DEFAULTS.cop, ves: DEFAULTS.ves };
 
@@ -615,6 +635,8 @@ footer {
   var q = { val: document.getElementById("q-ves-val"), chg: document.getElementById("q-ves-chg"), date: document.getElementById("q-ves-date") };
   var elMeta = document.getElementById("usdt-meta");
   var btnUse = document.getElementById("btn-usdt-use");
+  var nota = "";         // mensaje breve tras tocar Actualizar
+  var notaTimer = 0;
   var tasa = null;       // { ves, ts, changePct }
   var estado = "cargando"; // cargando | ok | vacio | error
 
@@ -673,15 +695,15 @@ footer {
       elMeta.textContent = "No se pudo actualizar. Se muestra el último valor guardado (" + ago(age) + "). " + diff;
     } else if (age >= STALE_MS) {
       elMeta.className = "usdt-meta stale";
-      elMeta.textContent = "El valor tiene " + ago(age).replace("hace ", "") + " sin actualizarse. Revisa la pestaña Actions en GitHub. " + diff;
+      elMeta.textContent = "El valor tiene " + ago(age).replace("hace ", "") + " sin actualizarse. Revisa la pestaña Actions en GitHub. " + diff + (nota ? " " + nota : "");
     } else {
       elMeta.className = "usdt-meta";
-      elMeta.textContent = "Actualizado " + ago(age) + ". " + diff;
+      elMeta.textContent = "Actualizado " + ago(age) + ". " + diff + (nota ? " " + nota : "");
     }
   }
 
   function cargarTasa() {
-    fetch("tasa.json?t=" + Date.now(), { cache: "no-store" })
+    return fetch("tasa.json?t=" + Date.now(), { cache: "no-store" })
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
@@ -710,6 +732,35 @@ footer {
     refreshLabels();
     if (lastActive && inputs[lastActive].value) recalc(lastActive);
   });
+
+  function mostrarNota(texto) {
+    nota = texto;
+    renderUsdt();
+    clearTimeout(notaTimer);
+    notaTimer = setTimeout(function () { nota = ""; renderUsdt(); }, 8000);
+  }
+  var btnRef = document.getElementById("btn-usdt-refresh");
+  btnRef.addEventListener("click", function () {
+    var antes = tasa ? tasa.ts : 0;
+    btnRef.disabled = true;
+    btnRef.classList.add("busy");
+    cargarTasa().then(function () {
+      btnRef.disabled = false;
+      btnRef.classList.remove("busy");
+      if (estado === "error" || !tasa) return;
+      mostrarNota(tasa.ts === antes ? "Ya tienes el dato más reciente." : "Valor actualizado.");
+    });
+  });
+
+  // En GitHub Pages el enlace a la acción se arma solo a partir de la dirección de la página.
+  (function () {
+    var m = location.hostname.match(/^([^.]+)\.github\.io$/i);
+    var repo = location.pathname.split("/")[1];
+    if (m && repo) {
+      document.getElementById("lnk-actions").href = "https://github.com/" + m[1] + "/" + repo + "/actions/workflows/actualizar-tasa.yml";
+      document.getElementById("usdt-hint").hidden = false;
+    }
+  })();
 
   cargarTasa();
   setInterval(cargarTasa, REFRESH_MS);
