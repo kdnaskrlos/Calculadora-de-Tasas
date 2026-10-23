@@ -231,6 +231,15 @@ main { padding: 18px 16px 16px; display: flex; flex-direction: column; gap: 18px
   font-variant-numeric: tabular-nums;
 }
 .input-wrap input::placeholder { color: var(--ink-3); }
+.copy-btn {
+  flex: none; display: grid; place-items: center; width: 36px; height: 36px; margin-right: -6px;
+  border: 0; border-radius: 10px; background: transparent; color: var(--ink-3); cursor: pointer;
+  transition: color .15s, background-color .15s, opacity .15s;
+}
+.copy-btn:hover { color: var(--accent-ink); background: var(--accent-soft); }
+.copy-btn:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 1px; }
+.copy-btn[disabled] { opacity: .35; cursor: default; background: transparent; color: var(--ink-3); }
+.copy-btn.copied { color: var(--accent-ink); }
 
 .cross {
   margin: 0;
@@ -406,7 +415,8 @@ footer {
       </div>
       <div class="input-wrap" data-cur="cop">
         <span class="sym">COP</span>
-        <input id="in-cop" data-cur="cop" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00">
+        <input id="in-cop" data-cur="cop" type="text" inputmode="decimal" autocomplete="off" placeholder="">
+        <button class="copy-btn" type="button" data-cur="cop" aria-label="Copiar valor en pesos colombianos" title="Copiar" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
       </div>
     </div>
 
@@ -419,7 +429,8 @@ footer {
       </div>
       <div class="input-wrap" data-cur="usd">
         <span class="sym">$</span>
-        <input id="in-usd" data-cur="usd" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00">
+        <input id="in-usd" data-cur="usd" type="text" inputmode="decimal" autocomplete="off" placeholder="">
+        <button class="copy-btn" type="button" data-cur="usd" aria-label="Copiar valor en dólares" title="Copiar" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
       </div>
     </div>
 
@@ -433,7 +444,8 @@ footer {
       </div>
       <div class="input-wrap" data-cur="ves">
         <span class="sym">Bs.</span>
-        <input id="in-ves" data-cur="ves" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00">
+        <input id="in-ves" data-cur="ves" type="text" inputmode="decimal" autocomplete="off" placeholder="">
+        <button class="copy-btn" type="button" data-cur="ves" aria-label="Copiar valor en bolívares" title="Copiar" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
       </div>
     </div>
 
@@ -657,7 +669,48 @@ footer {
       if (cur === source) return;
       inputs[cur].value = isNaN(amount) ? "" : fmt(convertAll(source, amount)[cur]);
     });
+    updateCopyBtns();
   }
+
+  /* ---------- Botones de copiar ---------- */
+  var COPY_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+  var CHECK_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+  var copyBtns = {};
+  document.querySelectorAll("#view-calc .copy-btn").forEach(function (b) { copyBtns[b.dataset.cur] = b; });
+  function updateCopyBtns() {
+    Object.keys(copyBtns).forEach(function (cur) { copyBtns[cur].disabled = !inputs[cur].value; });
+  }
+  function copiarTexto(texto, listo) {
+    function plan_b() {
+      try {
+        var ta = document.createElement("textarea");
+        ta.value = texto; ta.setAttribute("readonly", "");
+        ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        var ok = document.execCommand && document.execCommand("copy");
+        document.body.removeChild(ta);
+        if (ok) listo();
+      } catch (e) {}
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(texto).then(listo, plan_b);
+    } else {
+      plan_b();
+    }
+  }
+  Object.keys(copyBtns).forEach(function (cur) {
+    var b = copyBtns[cur];
+    b.addEventListener("click", function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();   // no enfocar el campo ni abrir el teclado
+      var texto = inputs[cur].value;
+      if (!texto) return;
+      copiarTexto(texto, function () {
+        b.innerHTML = CHECK_ICON; b.classList.add("copied"); b.title = "Copiado";
+        clearTimeout(b._t);
+        b._t = setTimeout(function () { b.innerHTML = COPY_ICON; b.classList.remove("copied"); b.title = "Copiar"; }, 1400);
+      });
+    });
+  });
 
   Object.keys(inputs).forEach(function (cur) {
     var el = inputs[cur];
@@ -670,6 +723,7 @@ footer {
     el.addEventListener("blur", function () {
       var n = parse(el.value);
       if (!isNaN(n)) el.value = fmt(n);
+      updateCopyBtns();
     });
     wraps[cur].addEventListener("click", function () { el.focus(); });
   });
@@ -697,7 +751,8 @@ footer {
   }
 
   document.getElementById("btn-clear").addEventListener("click", function () {
-    Object.keys(inputs).forEach(function (c) { inputs[c].value = fmt(0); });
+    Object.keys(inputs).forEach(function (c) { inputs[c].value = ""; });
+    updateCopyBtns();
     setActive(null);
     // No se selecciona ningún campo: se quita el foco para que tampoco salga el teclado en el móvil.
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
@@ -737,7 +792,7 @@ footer {
     elNote.textContent = falta ? "Todavía no hay dato de " + NOMBRES[mode] + ". Mientras tanto se usa tu tasa manual" + (manualVes > 0 ? " (" + fmt(manualVes) + " Bs.)." : ", que está en 0.") : "";
   }
 
-  function showSettings(on) {
+  function mostrarAjustes(on) {
     viewSet.hidden = !on;
     viewCalc.hidden = on;
     btnSet.setAttribute("aria-pressed", on ? "true" : "false");
@@ -748,8 +803,26 @@ footer {
       recalc(lastActive);
     }
   }
-  btnSet.addEventListener("click", function () { showSettings(viewSet.hidden); });
-  document.getElementById("btn-done").addEventListener("click", function () { showSettings(false); });
+  // Historial: abrir Ajustes agrega una entrada, así el botón "atrás" del móvil vuelve a la calculadora.
+  var entradaAjustes = false;
+  try { if (history.state && history.state.ajustes) history.replaceState(null, ""); } catch (e) {}
+  function abrirAjustes() {
+    try { history.pushState({ ajustes: true }, ""); entradaAjustes = true; } catch (e) { entradaAjustes = false; }
+    mostrarAjustes(true);
+  }
+  function cerrarAjustes() {
+    if (entradaAjustes) {
+      try { history.back(); return; } catch (e) {}   // popstate se encarga de cerrar la pantalla
+    }
+    entradaAjustes = false;
+    mostrarAjustes(false);
+  }
+  window.addEventListener("popstate", function () {
+    entradaAjustes = false;
+    if (!viewSet.hidden) mostrarAjustes(false);
+  });
+  btnSet.addEventListener("click", function () { if (viewSet.hidden) abrirAjustes(); else cerrarAjustes(); });
+  document.getElementById("btn-done").addEventListener("click", cerrarAjustes);
 
   function persistRates() {
     try { localStorage.setItem(KEY, JSON.stringify({ cop: rates.cop, ves: manualVes, mode: mode, recargo: recargo, v: 3 })); } catch (e) {}
@@ -1016,8 +1089,9 @@ footer {
   aplicarModo();
   refreshLabels();
 
-  // Estado inicial: todos los valores en 0.
-  Object.keys(inputs).forEach(function (c) { inputs[c].value = fmt(0); });
+  // Estado inicial: campos vacíos.
+  Object.keys(inputs).forEach(function (c) { inputs[c].value = ""; });
+  updateCopyBtns();
   setActive("usd");
 })();
 </script>
