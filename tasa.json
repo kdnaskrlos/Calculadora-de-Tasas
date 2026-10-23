@@ -4,9 +4,9 @@
   "rate": 1004.5,
   "buy": 1005.0,
   "sell": 1004.0,
-  "previous_rate": 1004.23,
-  "change_pct": 0.03,
-  "updated_at": "2026-10-22T23:28:47Z",
+  "previous_rate": 1004.5,
+  "change_pct": 0.0,
+  "updated_at": "2026-10-23T00:00:26Z",
   "history": [
     {
       "t": "2026-10-22T14:06:42Z",
@@ -91,6 +91,10 @@
     {
       "t": "2026-10-22T23:28:47Z",
       "rate": 1004.5
+    },
+    {
+      "t": "2026-10-23T00:00:26Z",
+      "rate": 1004.5
     }
   ],
   "bcv": {
@@ -100,6 +104,6 @@
     "previous_rate": null,
     "change_pct": null,
     "updated_at": "2026-10-22T04:00:00Z",
-    "checked_at": "2026-10-22T23:28:47Z"
+    "checked_at": "2026-10-23T00:00:26Z"
   }
 }
