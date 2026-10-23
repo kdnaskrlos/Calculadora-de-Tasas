@@ -565,7 +565,7 @@ footer {
 </div>
 <script>
 (function () {
-  var DEFAULTS = { cop: 3200, ves: 0 };   // ves = tasa manual inicial (0 = sin definir)
+  var DEFAULTS = { cop: 3200, ves: 15 };   // ves = tasa manual inicial
   var KEY = "super-calculadora-tasas";
   var THEME_KEY = "super-calculadora-tema-v2";
   var HOUR = 60 * 60 * 1000;
@@ -581,8 +581,9 @@ footer {
     if (saved && saved.cop > 0 && saved.ves >= 0) {
       rates = { cop: saved.cop, ves: saved.ves };
       // Antes la tasa manual venía en 1.020 por defecto; si no se tocó, pasa a 0.
-      manualVes = (saved.v !== 3 && saved.ves === 1020) ? 0 : saved.ves;
-      if ((saved.v === 2 || saved.v === 3) && MODES.indexOf(saved.mode) !== -1) mode = saved.mode;   // v:2 = guardado con la versión de 3 opciones
+      // Las versiones anteriores traían 1.020 (o 0) como valor inicial; si no se tocó, pasa a la inicial actual.
+      manualVes = (saved.v !== 4 && (saved.ves === 1020 || saved.ves === 0)) ? DEFAULTS.ves : saved.ves;
+      if ((saved.v === 2 || saved.v === 3 || saved.v === 4) && MODES.indexOf(saved.mode) !== -1) mode = saved.mode;   // v:2 = guardado con la versión de 3 opciones
       if (typeof saved.recargo === "number" && saved.recargo >= 0 && isFinite(saved.recargo)) recargo = saved.recargo;
     }
   } catch (e) {}
@@ -825,7 +826,7 @@ footer {
   document.getElementById("btn-done").addEventListener("click", cerrarAjustes);
 
   function persistRates() {
-    try { localStorage.setItem(KEY, JSON.stringify({ cop: rates.cop, ves: manualVes, mode: mode, recargo: recargo, v: 3 })); } catch (e) {}
+    try { localStorage.setItem(KEY, JSON.stringify({ cop: rates.cop, ves: manualVes, mode: mode, recargo: recargo, v: 4 })); } catch (e) {}
   }
 
   // Aplica la fuente elegida, guarda, refresca etiquetas y recalcula la calculadora si cambió la tasa.
@@ -905,7 +906,7 @@ footer {
     aplicarYMostrar();
     renderAjustes(true);
     err.textContent = "";
-    savedMsg.textContent = "Restablecido: 3.200 COP, Binance P2P con recargo de 10 Bs. y tasa manual en 0.";
+    savedMsg.textContent = "Restablecido: 3.200 COP, Binance P2P con recargo de 10 Bs. y tasa manual en 15.";
   });
 
   /* ---------- USDT / VES desde tasa.json ---------- */
