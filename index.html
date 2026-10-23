@@ -582,9 +582,9 @@ footer {
       rates = { cop: saved.cop, ves: saved.ves };
       // Antes la tasa manual venía en 1.020 por defecto; si no se tocó, pasa a 0.
       // Las versiones anteriores traían 1.020 (o 0) como valor inicial; si no se tocó, pasa a la inicial actual.
-      manualVes = (saved.v !== 5 && (saved.ves === 1020 || saved.ves === 15)) ? DEFAULTS.ves : saved.ves;
-      if ((saved.v >= 2 && saved.v <= 5) && MODES.indexOf(saved.mode) !== -1) mode = saved.mode;   // v:2 = guardado con la versión de 3 opciones
-      if (typeof saved.recargo === "number" && saved.recargo >= 0 && isFinite(saved.recargo)) recargo = (saved.v !== 5 && saved.recargo === 10) ? RECARGO_INICIAL : saved.recargo;   // el 10 de antes pasa a 15 si no se tocó
+      manualVes = ((saved.v || 0) < 5 && (saved.ves === 1020 || saved.ves === 15)) ? DEFAULTS.ves : saved.ves;
+      if (saved.v === 6 && MODES.indexOf(saved.mode) !== -1) mode = saved.mode;   // guardados de versiones anteriores vuelven a Binance P2P (predeterminado)
+      if (typeof saved.recargo === "number" && saved.recargo >= 0 && isFinite(saved.recargo)) recargo = ((saved.v || 0) < 5 && saved.recargo === 10) ? RECARGO_INICIAL : saved.recargo;   // el 10 de antes pasa a 15 si no se tocó
     }
   } catch (e) {}
 
@@ -826,7 +826,7 @@ footer {
   document.getElementById("btn-done").addEventListener("click", cerrarAjustes);
 
   function persistRates() {
-    try { localStorage.setItem(KEY, JSON.stringify({ cop: rates.cop, ves: manualVes, mode: mode, recargo: recargo, v: 5 })); } catch (e) {}
+    try { localStorage.setItem(KEY, JSON.stringify({ cop: rates.cop, ves: manualVes, mode: mode, recargo: recargo, v: 6 })); } catch (e) {}
   }
 
   // Aplica la fuente elegida, guarda, refresca etiquetas y recalcula la calculadora si cambió la tasa.
