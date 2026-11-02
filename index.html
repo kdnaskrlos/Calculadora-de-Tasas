@@ -721,24 +721,23 @@ footer {
     var el = inputs[cur];
     el.addEventListener("input", function () {
       el.value = el.value.replace(/[^\d.,]/g, "");
-      el._prev = null;   // la persona escribió: ya no hay nada que restaurar
       setActive(cur);
       recalc(cur);
     });
     el.addEventListener("focus", function () {
-      var eraFuente = (lastActive === cur);
       setActive(cur);
       if (esTactil()) {
         // En el móvil, seleccionar el texto abre el menú de copiar/pegar del sistema. En su lugar,
-        // si la casilla tenía un valor calculado, se vacía para escribir de cero (y se restaura si no se escribe nada).
-        if (!eraFuente && el.value) { el._prev = el.value; el.value = ""; updateCopyBtns(); }
+        // el valor se deja intacto y el cursor se coloca al final (después del toque, que es cuando el móvil fija el cursor).
+        var alFinal = function () { try { var n = el.value.length; el.setSelectionRange(n, n); } catch (e) {} };
+        alFinal();
+        setTimeout(alFinal, 0);
+        setTimeout(alFinal, 60);
       } else {
         el.select();
       }
     });
     el.addEventListener("blur", function () {
-      if (el._prev && !el.value) el.value = el._prev;
-      el._prev = null;
       var n = parse(el.value);
       if (!isNaN(n)) el.value = fmt(n);
       updateCopyBtns();
@@ -769,7 +768,7 @@ footer {
   }
 
   document.getElementById("btn-clear").addEventListener("click", function () {
-    Object.keys(inputs).forEach(function (c) { inputs[c].value = ""; inputs[c]._prev = null; });
+    Object.keys(inputs).forEach(function (c) { inputs[c].value = ""; });
     updateCopyBtns();
     setActive(null);
     // No se selecciona ningún campo: se quita el foco para que tampoco salga el teclado en el móvil.
