@@ -1,0 +1,6 @@
+name = "calculadora-tasas-monitor"
+main = "worker.js"
+compatibility_date = "2026-11-23"
+
+[triggers]
+crons = ["*/10 * * * *"]
