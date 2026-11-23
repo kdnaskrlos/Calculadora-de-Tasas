@@ -6,7 +6,13 @@ on:
     # Binance si el valor guardado tiene más de 25 minutos, así queda cada ~30 minutos aunque
     # GitHub se salte alguna ejecución.
     - cron: "7,17,27,37,47,57 * * * *"
-  workflow_dispatch:       # permite ejecutarlo a mano desde la pestaña Actions
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Forzar consulta a Binance aunque la tasa sea reciente"
+        type: boolean
+        required: false
+        default: true
 
 permissions:
   contents: write
@@ -27,7 +33,7 @@ jobs:
 
       - name: Consultar Binance P2P
         env:
-          FORZAR: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
+          FORZAR: ${{ github.event_name == 'workflow_dispatch' && inputs.force && '1' || '' }}
         run: |
           SCRIPT=$(find . -name actualizar_tasa.py -not -path "./.git/*" | head -n 1)
           if [ -z "$SCRIPT" ]; then
